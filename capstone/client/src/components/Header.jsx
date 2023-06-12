@@ -1,17 +1,32 @@
 import React from "react";
 import { Navbar, Nav } from "react-bootstrap";
-import { useSelector } from "react-redux";
-import { Link, useLocation } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { logout } from "../store/slice/AuthSlice";
+import axiosInstance from "../utils/axiosConfig";
 
 const Header = () => {
   const isLoggedIn = useSelector((state) => state.auth.isLoggedIn);
   const location = useLocation();
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   const navbarStyle = {
-      backgroundColor: '#5bcee7e0',
-      color: '#FFFFFF',
-      // Add more styles as needed
-    };
+    backgroundColor: "#5bcee7e0",
+    color: "#FFFFFF",
+  };
+
+  const handleLogout = () => {
+    axiosInstance
+      .get("/logout")
+      .then((resp) => {
+        if (typeof resp.data === "boolean") {
+          dispatch(logout());
+          navigate("/login");
+        }
+      })
+      .catch((err) => console.log(err));
+  };
 
   return (
     <Navbar style={navbarStyle} expand="lg" className="px-3">
@@ -40,7 +55,7 @@ const Header = () => {
               >
                 Profile
               </Nav.Link>
-              <Nav.Link as={Link} to="/logout">
+              <Nav.Link as={Link} to="/login" onClick={handleLogout}>
                 Logout
               </Nav.Link>
             </>

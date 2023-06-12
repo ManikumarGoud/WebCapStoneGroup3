@@ -3,7 +3,8 @@
   height: calc(100vh - 60px) !important;
 }
 
-.image-container, .login-img {
+.image-container,
+.login-img {
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -11,6 +12,6 @@
 .image-container {
   background-image: url("../assets/img/register_main.jpg");
 }
- .login-img {
+.login-img {
   background-image: url("../assets/img/login_main.jpg");
 }

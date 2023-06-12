@@ -36,7 +36,7 @@ const registerController = async (req, resp, next) => {
     error["confirmPassword"] = "Passwords did not match";
   }
 
-  if (!moment.isDate(dob)) {
+  if (!moment(dob).isValid()) {
     error["dob"] = "Invalid Date of Birth";
   }
   if (Object.keys(error).length > 0) {

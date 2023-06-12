@@ -1,17 +1,32 @@
-import React, { Fragment } from "react";
+import React, { Fragment, useEffect } from "react";
 import * as Yup from "yup";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import { Button, Row, Col, Container } from "react-bootstrap";
 import axiosInstance from "../utils/axiosConfig";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { login } from "../store/slice/AuthSlice";
 
 const Login = () => {
   const navigate = useNavigate();
+  const isLoggedIn = useSelector((state) => state.auth.isLoggedIn);
   const [errorMessage, setErrorMessage] = useState("");
   const dispatch = useDispatch();
+
+  useEffect(() => {
+    axiosInstance
+      .post("/login", {})
+      .then((resp) => {
+        if (typeof resp.data !== "boolean") {
+          setErrorMessage(resp.data.error);
+        } else {
+          dispatch(login());
+          navigate("/");
+        }
+      })
+      .catch((error) => {});
+  }, []);
 
   const schema = Yup.object().shape({
     email: Yup.string().email().required("Email is required"),
@@ -38,15 +53,14 @@ const Login = () => {
             if (typeof resp.data !== "boolean") {
               setErrorMessage(resp.data.error);
             } else {
-              dispatch(() => login());
+              dispatch(login());
               resetForm();
               navigate("/");
             }
           })
           .catch((error) => {
-            console.log(error);
             setErrorMessage(
-              "An error occurred while registering. Please try again."
+              "An error occurred while Logging in. Please try again."
             );
           });
       }}
@@ -131,7 +145,7 @@ const Login = () => {
                         className="mt-2"
                         onClick={handleSubmit}
                       >
-                        Register
+                        Login
                       </Button>
                     </div>
                   </Form>
