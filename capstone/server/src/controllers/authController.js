@@ -2,7 +2,9 @@ const User = require("../models/User");
 const bcrypt = require("bcrypt");
 
 const getLogin = (req, res) => {
-  res.json(req.session.userId);
+  const { userId } = req.session;
+  console.log(userId);
+  res.json(userId);
 };
 
 const login = async (req, res) => {
@@ -36,12 +38,12 @@ const login = async (req, res) => {
         const isValid = await bcrypt.compare(password, user.password);
         if (isValid) {
           req.session.userId = user._id;
+          res.status(200).json(true);
         } else {
-          res
-            .status(403)
-            .json({ message: "Invalid Email or Password", code: 403 });
+          res.status(403).json({
+            error: "Invalid Credentials. Email and Password didnt match",
+          });
         }
-        res.status(200).json(true);
       }
     }
   }

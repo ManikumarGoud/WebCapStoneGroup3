@@ -3,5 +3,6 @@ export const logoutReducer = (state) => {
 };
 
 export const loginReducer = (state) => {
+  console.log("in reducer");
   state.isLoggedIn = true;
 };

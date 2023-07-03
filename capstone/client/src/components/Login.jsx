@@ -5,13 +5,13 @@ import { Button, Row, Col, Container } from "react-bootstrap";
 import axiosInstance from "../utils/axiosConfig";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch /*useSelector*/ } from "react-redux";
 import { login } from "../store/slice/AuthSlice";
 
 const Login = () => {
   const navigate = useNavigate();
-  const isLoggedIn = useSelector((state) => state.auth.isLoggedIn);
-  const [errorMessage, setErrorMessage] = useState("");
+  // const isLoggedIn = useSelector((state) => state.auth.isLoggedIn);
+  const [errorMessage, setErrorMessage] = useState({});
   const dispatch = useDispatch();
 
   useEffect(() => {
@@ -59,9 +59,11 @@ const Login = () => {
             }
           })
           .catch((error) => {
-            setErrorMessage(
-              "An error occurred while Logging in. Please try again."
-            );
+            console.log(error);
+            setErrorMessage((prevErrors) => ({
+              ...prevErrors,
+              ...error.response.data,
+            }));
           });
       }}
     >
@@ -137,8 +139,10 @@ const Login = () => {
                       />
                     </div>
                     <div>
-                      {errorMessage && (
-                        <div className="alert alert-danger">{errorMessage}</div>
+                      {errorMessage.error && (
+                        <div className="alert alert-danger custom-error">
+                          {errorMessage.error}
+                        </div>
                       )}
                       <Button
                         type="submit"

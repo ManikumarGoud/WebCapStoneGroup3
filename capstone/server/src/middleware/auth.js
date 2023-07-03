@@ -1,7 +1,8 @@
 const authCheck = (req, res, next) => {
-  const { userId } = req.body;
-
-  if (userId === null || typeof userId !== "string") {
-    res.json(false);
-  }
+  const { userId } = req.session;
+  if (userId) {
+    next();
+  } else res.status(401).json(false);
 };
+
+module.exports = authCheck;

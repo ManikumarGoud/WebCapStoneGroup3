@@ -50,6 +50,13 @@ const Header = () => {
               </Nav.Link>
               <Nav.Link
                 as={Link}
+                to="/products"
+                active={location.pathname === "/products"}
+              >
+                My Products
+              </Nav.Link>
+              <Nav.Link
+                as={Link}
                 to="/profile"
                 active={location.pathname === "/profile"}
               >

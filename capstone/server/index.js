@@ -14,6 +14,15 @@ app.use(
 );
 
 const cors = require("cors");
+const multer = require("multer");
+const authCheck = require("./src/middleware/auth");
+const {
+  addProduct,
+  getProductList,
+  deleteProduct,
+  updateProduct,
+  getMyProductList,
+} = require("./src/controllers/productController");
 app.use(
   cors({
     origin: "http://localhost:3000",
@@ -22,8 +31,12 @@ app.use(
 );
 
 app.use(express.static("public"));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: "5mb" }));
+app.use(express.urlencoded({ limit: "5mb", extended: true }));
+// Multer middleware for handling file uploads
+const upload = multer({ limits: { fileSize: 10 * 1024 * 1024 } }).single(
+  "image"
+);
 
 const route = express.Router();
 
@@ -32,6 +45,10 @@ route.get("/logout", logout);
 route.get("/ll", getLogin);
 
 route.post("/login", login);
+route.post("/products/add", authCheck, upload, addProduct);
+route.get("/myProducts", getMyProductList);
+route.delete("/products/delete/:id", authCheck, deleteProduct);
+route.put("/products/update/:id", authCheck, updateProduct);
 
 app.use(route);
 app.listen(process.env.PORT, () => {

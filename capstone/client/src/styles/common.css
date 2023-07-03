@@ -15,3 +15,22 @@
 .login-img {
   background-image: url("../assets/img/login_main.jpg");
 }
+.custom-error {
+  margin: 0;
+}
+.table > :not(caption) > * > * {
+  text-align: center;
+  padding: 5px;
+}
+
+.myProductTable thead tr th:last-child,
+.myProductTable tbody tr td:last-child {
+  width: 150px;
+}
+.myProductTable thead tr th:nth-child(3),
+.myProductTable thead tr th:nth-child(4),
+.myProductTable tbody tr td:nth-child(3),
+.myProductTable tbody tr td:nth-child(4) {
+  width: 120px;
+  text-align: right;
+}
