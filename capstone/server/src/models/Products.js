@@ -24,6 +24,10 @@ const ProductSchema = new mongoose.Schema({
     type: String,
     required: [true, "Product Image is required"],
   },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
 });
 
 const Product = mongoose.model("Product", ProductSchema);

@@ -5,12 +5,32 @@ const getProductList = async (req, res) => {
     // Retrieve the user ID from the session
     const userId = req.session.userId;
 
-    console.log(userId);
-
     // Retrieve the list of products added by other users
     let products = [];
     if (userId) {
       products = await Product.find({ userId: { $ne: userId } });
+    } else {
+      products = await Product.find();
+    }
+
+    res.status(200).json(products);
+  } catch (error) {
+    console.log("Error retrieving product list:", error);
+    res.status(500).json({ error: "Error retrieving product list" });
+  }
+};
+
+const getLatestProductList = async (req, res) => {
+  try {
+    // Retrieve the user ID from the session
+    const userId = req.session.userId;
+
+    // Retrieve the list of products added by other users
+    let products = [];
+    if (userId) {
+      products = await Product.find({ userId: { $ne: userId } })
+        .sort({ createdAt: -1 })
+        .limit(10);
     } else {
       products = await Product.find();
     }
@@ -137,4 +157,5 @@ module.exports = {
   deleteProduct,
   updateProduct,
   getMyProductList,
+  getLatestProductList,
 };

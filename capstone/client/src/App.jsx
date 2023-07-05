@@ -10,6 +10,8 @@ import { Provider } from "react-redux";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import store from "./store/store";
+import Footer from "./components/Footer";
+import PersonalProfile from "./components/Profile";
 
 const App = () => {
   return (
@@ -20,10 +22,12 @@ const App = () => {
         <Routes>
           <Route path="/register" element={<Register />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/profile" element={<PersonalProfile />} />
           <Route path="/" element={<Home />} />
           <Route path="/products" element={<Products />} />
           <Route path="*" element={<RedirectToLogin />} />
         </Routes>
+        <Footer />
       </Router>
     </Provider>
   );

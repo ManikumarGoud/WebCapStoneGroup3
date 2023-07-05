@@ -24,11 +24,14 @@ const Register = () => {
     confirmPassword: Yup.string()
       .required("Confirm Password is required")
       .oneOf([Yup.ref("password")], "Password did not match"),
-    dob: Yup.date().required("DoB is required"),
+    dob: Yup.date()
+      .required("DoB is required")
+      .max(new Date(), "Invalid date of birth")
+      .min(new Date(1900, 0, 1), "Invalid date of birth"),
   });
 
   const notifySuccess = () => {
-    console.log("done")
+    console.log("done");
     toast.success("Registration successful!", {
       position: toast.POSITION.BOTTOM_RIGHT,
     });
@@ -68,7 +71,7 @@ const Register = () => {
                 }));
               } else {
                 resetForm();
-                console.log("asdf")
+                console.log("asdf");
                 notifySuccess();
               }
             })

@@ -10,7 +10,6 @@ import { login } from "../store/slice/AuthSlice";
 
 const Login = () => {
   const navigate = useNavigate();
-  // const isLoggedIn = useSelector((state) => state.auth.isLoggedIn);
   const [errorMessage, setErrorMessage] = useState({});
   const dispatch = useDispatch();
 

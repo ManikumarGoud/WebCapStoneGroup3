@@ -19,6 +19,7 @@ const authCheck = require("./src/middleware/auth");
 const {
   addProduct,
   getProductList,
+  getLatestProductList,
   deleteProduct,
   updateProduct,
   getMyProductList,
@@ -46,7 +47,9 @@ route.get("/ll", getLogin);
 
 route.post("/login", login);
 route.post("/products/add", authCheck, upload, addProduct);
+route.get("/products/latest", getLatestProductList);
 route.get("/myProducts", getMyProductList);
+route.get("/products", getProductList);
 route.delete("/products/delete/:id", authCheck, deleteProduct);
 route.put("/products/update/:id", authCheck, updateProduct);
 
