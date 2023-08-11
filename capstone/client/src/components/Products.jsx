@@ -61,14 +61,14 @@ const Products = () => {
     axiosInstance
       .post("/login", {})
       .then((resp) => {
-        if (typeof resp.data !== "boolean") {
-          toast.error("Session Expired!!");
-        } else {
+        if (typeof resp.data === "boolean") {
           dispatch(login());
-          navigate("/products");
         }
       })
-      .catch((error) => {});
+      .catch((error) => {
+        toast.error("Session Expired!!");
+        navigate("/login");
+      });
   }, []);
 
   const fetchProducts = async () => {

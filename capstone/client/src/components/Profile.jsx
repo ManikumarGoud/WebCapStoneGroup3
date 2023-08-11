@@ -1,58 +1,229 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Form, Button } from "react-bootstrap";
 import {
   MDBCol,
   MDBContainer,
   MDBRow,
   MDBCard,
-  MDBCardText,
   MDBCardBody,
   MDBCardImage,
   MDBTypography,
   MDBIcon,
 } from "mdb-react-ui-kit";
+import { useFirestore } from "reactfire";
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  doc,
+  updateDoc,
+} from "firebase/firestore";
 import { useFormik } from "formik";
 import * as Yup from "yup";
+import axiosInstance from "../utils/axiosConfig";
+import { toast } from "react-toastify";
+import { useNavigate } from "react-router";
+import { useDispatch } from "react-redux";
+import { login } from "../store/slice/AuthSlice";
 
 export default function PersonalProfile() {
   const [isEditMode, setIsEditMode] = useState(false);
-  const initialValues = {
-    firstName: "Marie",
-    lastName: "Horwitz",
-    email: "info@example.com",
-    addressLine1: "",
-    addressLine2: "",
-    city: "",
-    province: "",
-    country: "",
-    phoneNumber: "",
-    profilePicture:
-      "https://mdbcdn.b-cdn.net/img/Photos/new-templates/bootstrap-chat/ava1-bg.webp",
+  const [user, setUser] = useState({});
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState({});
+  const [profilePicture, setProfilePicture] = useState("");
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const firestore = useFirestore();
+
+  useEffect(() => {
+    axiosInstance
+      .post("/login", {})
+      .then((resp) => {
+        if (typeof resp.data === "boolean") {
+          dispatch(login());
+        }
+      })
+      .catch((error) => {
+        toast.error("Session Expired!!");
+        navigate("/login");
+      });
+
+    getUserProfile();
+  }, []);
+
+  const getUserProfile = () => {
+    axiosInstance
+      .get("/user")
+      .then((resp) => {
+        if (resp.data) {
+          const dateObject = new Date(resp.data.dob);
+
+          const year = dateObject.getUTCFullYear();
+          const month = String(dateObject.getUTCMonth() + 1).padStart(2, "0");
+          const day = String(dateObject.getUTCDate()).padStart(2, "0");
+
+          const formattedDate = `${year}-${month}-${day}`;
+
+          setUser(resp.data);
+          formik.setValues({
+            firstName: resp.data.firstName,
+            lastName: resp.data.lastName,
+            addressLine1: resp.data.addressLine1 || "",
+            addressLine2: resp.data.addressLine2 || "",
+            city: resp.data.city || "",
+            dob: formattedDate || "",
+            province: resp.data.province || "",
+            country: resp.data.country || "",
+            phoneNumber: resp.data.phoneNumber || "",
+          });
+          setProfilePicture(resp.data.profilePicture); // Assuming the backend returns the profile picture URL
+        }
+      })
+      .catch((err) => {});
   };
 
-  const validationSchema = Yup.object().shape({
-    firstName: Yup.string().required("First Name is required"),
-    lastName: Yup.string().required("Last Name is required"),
-    email: Yup.string().email("Invalid email").required("Email is required"),
-    addressLine1: Yup.string().required("Address Line 1 is required"),
-    city: Yup.string().required("City is required"),
-    province: Yup.string().required("Province is required"),
-    country: Yup.string().required("Country is required"),
-    phoneNumber: Yup.string().required("Phone Number is required"),
-    profilePicture: Yup.string()
-      .url("Invalid URL")
-      .required("Profile Picture is required"),
+  const formik = useFormik({
+    initialValues: {
+      firstName: "",
+      lastName: "",
+      addressLine1: "",
+      addressLine2: "",
+      dob: "",
+      city: "",
+      province: "",
+      country: "",
+      phoneNumber: "",
+      image: null,
+    },
+    validationSchema: Yup.object().shape({
+      firstName: Yup.string()
+        .required("First Name is required")
+        .matches(/^[A-Za-z ]+$/, "First Name should contain only alphabets"),
+      lastName: Yup.string()
+        .required("Last Name is required")
+        .matches(/^[A-Za-z ]+$/, "Last Name should contain only alphabets"),
+      addressLine1: Yup.string()
+        .required("Address Line 1 is required")
+        .matches(
+          /^[\w\s/-]+$/,
+          "Address Line 1 should contain only alphanumeric characters, hyphen, space, and forward slash"
+        )
+        .min(3, "Address Line 1 should be at least 3 characters")
+        .max(50, "Address Line 1 should not exceed 50 characters"),
+      addressLine2: Yup.string()
+        .nullable()
+        .matches(
+          /^[\w\s/-]+$/,
+          "Address Line 2 should contain only alphanumeric characters, hyphen, space, and forward slash"
+        )
+        .min(3, "Address Line 2 should be at least 3 characters")
+        .max(50, "Address Line 2 should not exceed 50 characters"),
+      city: Yup.string()
+        .required("City is required")
+        .matches(/^[A-Za-z]+$/, "City should contain only alphabets")
+        .min(3, "City should be at least 3 characters")
+        .max(50, "City should not exceed 50 characters"),
+      province: Yup.string()
+        .required("Province is required")
+        .matches(/^[A-Za-z]+$/, "Province should contain only alphabets")
+        .min(3, "Province should be at least 3 characters")
+        .max(50, "Province should not exceed 50 characters"),
+      country: Yup.string()
+        .required("Country is required")
+        .matches(/^[A-Za-z]+$/, "Country should contain only alphabets")
+        .min(3, "Country should be at least 3 characters")
+        .max(50, "Country should not exceed 50 characters"),
+      phoneNumber: Yup.string()
+        .required("Phone Number is required")
+        .matches(
+          /^[1-9]\d{2}-\d{3}-\d{4}$/,
+          "Invalid Phone Number format. Should be XXX-XXX-XXXX"
+        ),
+      dob: Yup.date()
+        .required("DoB is required")
+        .max(new Date(), "Invalid date of birth")
+        .min(new Date(1900, 0, 1), "Invalid date of birth"),
+      image: profilePicture
+        ? Yup.mixed()
+        : Yup.mixed().test(
+            "fileType",
+            "Only JPEG, JPG, and PNG files are allowed",
+            (value) => {
+              if (!value) return false;
+              const acceptedFormats = ["image/jpeg", "image/jpg", "image/png"];
+              return acceptedFormats.includes(value.type);
+            }
+          ),
+    }),
   });
 
-  const formik = useFormik({
-    initialValues,
-    validationSchema,
-    onSubmit: (values) => {
+  const updateFirebaseProfile = async (values) => {
+    const { firstName, lastName } = values;
+    try {
+      const usersCollectionRef = collection(firestore, "users");
+      const querySnapshot = await getDocs(
+        query(usersCollectionRef, where("email", "==", user.email))
+      );
+      if (!querySnapshot.empty) {
+        const userDoc = querySnapshot.docs[0];
+        const userRef = doc(firestore, "users", userDoc.id);
+        await updateDoc(userRef, { firstName, lastName });
+      }
+    } catch (error) {
+      console.error("Error updating user profile:", error);
+    }
+  };
+
+  const handleSubmit = async (values) => {
+    try {
+      if (!formik.isValid) {
+        return;
+      }
+      setIsLoading(true);
       // Save form data or perform other actions here
-      console.log(values);
-      setIsEditMode(false);
-    },
-  });
+      const userUpdatedValues = {
+        firstName: values.firstName,
+        lastName: values.lastName,
+        addressLine1: values.addressLine1,
+        addressLine2: values.addressLine2,
+        city: values.city,
+        dob: values.dob,
+        country: values.country,
+        province: values.province,
+        phoneNumber: values.phoneNumber,
+        profilePicture: profilePicture,
+      };
+
+      axiosInstance
+        .post("/user/update", userUpdatedValues)
+        .then((resp) => {
+          if (typeof resp.data !== "boolean") {
+            setErrorMessage((prevErrors) => ({
+              ...prevErrors,
+            }));
+          } else {
+            toast.success("Update Successful!!");
+            setIsEditMode(false);
+            getUserProfile();
+            updateFirebaseProfile(formik.values);
+          }
+        })
+        .catch((error) => {
+          setErrorMessage((prevErrors) => ({
+            ...prevErrors,
+            ...error.response.data,
+          }));
+          toast.error("User Profile updated failed!!");
+        })
+        .finally(() => {
+          setIsLoading(false); // Hide the spinner after the post method call is completed
+        });
+    } catch (error) {
+      console.error("Error updating user profile:", error);
+    }
+  };
 
   const handleEdit = () => {
     setIsEditMode(true);
@@ -60,6 +231,19 @@ export default function PersonalProfile() {
 
   const handleCancel = () => {
     setIsEditMode(false);
+    getUserProfile();
+  };
+
+  const handleImageChange = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      formik.setFieldValue("image", file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setProfilePicture(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   return (
@@ -79,21 +263,20 @@ export default function PersonalProfile() {
                   }}
                 >
                   <MDBCardImage
-                    src={formik.values.profilePicture}
+                    src={profilePicture}
                     alt="Avatar"
-                    className="my-5 rounded-circle"
+                    className="mt-5 mb-2 rounded-circle"
                     style={{ width: "80px" }}
                     fluid
                   />
                   <MDBTypography tag="h5" className="text-white">
-                    {formik.values.firstName} {formik.values.lastName}
+                    {user.firstName} {user.lastName}
                   </MDBTypography>
-                  <MDBCardText className="text-white">Web Designer</MDBCardText>
                   {isEditMode ? (
                     <MDBIcon
                       far
                       icon="save mb-5"
-                      onClick={formik.handleSubmit}
+                      onClick={handleSubmit.bind(this, formik.values)}
                     />
                   ) : (
                     <MDBIcon
@@ -109,7 +292,6 @@ export default function PersonalProfile() {
                     <Form onSubmit={formik.handleSubmit}>
                       <MDBTypography tag="h6">Information</MDBTypography>
                       <hr className="mt-0 mb-4" />
-
                       <Form.Group className="mb-3" controlId="firstName">
                         <Form.Label>First Name</Form.Label>
                         <Form.Control
@@ -124,7 +306,7 @@ export default function PersonalProfile() {
                           disabled={!isEditMode}
                         />
                         <Form.Control.Feedback type="invalid">
-                          {formik.errors.firstName}
+                          {formik.errors.firstName || errorMessage.firstName}
                         </Form.Control.Feedback>
                       </Form.Group>
 
@@ -142,25 +324,23 @@ export default function PersonalProfile() {
                           disabled={!isEditMode}
                         />
                         <Form.Control.Feedback type="invalid">
-                          {formik.errors.lastName}
+                          {formik.errors.lastName || errorMessage.lastName}
                         </Form.Control.Feedback>
                       </Form.Group>
 
-                      <Form.Group className="mb-3" controlId="email">
-                        <Form.Label>Email</Form.Label>
+                      <Form.Group className="mb-3" controlId="dob">
+                        <Form.Label>Date of Birth</Form.Label>
                         <Form.Control
-                          type="email"
-                          placeholder="Enter Email"
-                          name="email"
-                          value={formik.values.email}
+                          type="date"
+                          placeholder="Enter DoB"
+                          name="dob"
+                          value={formik.values.dob}
                           onChange={formik.handleChange}
-                          isInvalid={
-                            formik.touched.email && formik.errors.email
-                          }
+                          isInvalid={formik.touched.dob && formik.errors.dob}
                           disabled={!isEditMode}
                         />
                         <Form.Control.Feedback type="invalid">
-                          {formik.errors.email}
+                          {formik.errors.dob || errorMessage.dob}
                         </Form.Control.Feedback>
                       </Form.Group>
 
@@ -179,7 +359,8 @@ export default function PersonalProfile() {
                           disabled={!isEditMode}
                         />
                         <Form.Control.Feedback type="invalid">
-                          {formik.errors.addressLine1}
+                          {formik.errors.addressLine1 ||
+                            errorMessage.addressLine1}
                         </Form.Control.Feedback>
                       </Form.Group>
 
@@ -198,7 +379,8 @@ export default function PersonalProfile() {
                           disabled={!isEditMode}
                         />
                         <Form.Control.Feedback type="invalid">
-                          {formik.errors.addressLine2}
+                          {formik.errors.addressLine2 ||
+                            errorMessage.addressLine2}
                         </Form.Control.Feedback>
                       </Form.Group>
 
@@ -214,7 +396,7 @@ export default function PersonalProfile() {
                           disabled={!isEditMode}
                         />
                         <Form.Control.Feedback type="invalid">
-                          {formik.errors.city}
+                          {formik.errors.city || errorMessage.city}
                         </Form.Control.Feedback>
                       </Form.Group>
 
@@ -232,7 +414,7 @@ export default function PersonalProfile() {
                           disabled={!isEditMode}
                         />
                         <Form.Control.Feedback type="invalid">
-                          {formik.errors.province}
+                          {formik.errors.province || errorMessage.province}
                         </Form.Control.Feedback>
                       </Form.Group>
 
@@ -250,7 +432,7 @@ export default function PersonalProfile() {
                           disabled={!isEditMode}
                         />
                         <Form.Control.Feedback type="invalid">
-                          {formik.errors.country}
+                          {formik.errors.country || errorMessage.country}
                         </Form.Control.Feedback>
                       </Form.Group>
 
@@ -269,31 +451,31 @@ export default function PersonalProfile() {
                           disabled={!isEditMode}
                         />
                         <Form.Control.Feedback type="invalid">
-                          {formik.errors.phoneNumber}
+                          {formik.errors.phoneNumber ||
+                            errorMessage.phoneNumber}
                         </Form.Control.Feedback>
                       </Form.Group>
-
-                      <Form.Group className="mb-3" controlId="profilePicture">
-                        <Form.Label>Profile Picture URL</Form.Label>
-                        <Form.Control
-                          type="text"
-                          placeholder="Enter Profile Picture URL"
-                          name="profilePicture"
-                          value={formik.values.profilePicture}
-                          onChange={formik.handleChange}
-                          isInvalid={
-                            formik.touched.profilePicture &&
-                            formik.errors.profilePicture
-                          }
-                          disabled={!isEditMode}
-                        />
-                        <Form.Control.Feedback type="invalid">
-                          {formik.errors.profilePicture}
-                        </Form.Control.Feedback>
-                      </Form.Group>
-
-                      {isEditMode ? (
+                      {isEditMode && (
                         <>
+                          <Form.Group className="mb-3" controlId="image">
+                            <Form.Label>Profile Picture</Form.Label>
+                            <Form.Control
+                              type="file"
+                              name="image"
+                              onChange={handleImageChange}
+                            />
+                            {formik.touched.image && formik.errors.image && (
+                              <div className="text-danger">
+                                {formik.errors.image ||
+                                  errorMessage.profilePicture}
+                              </div>
+                            )}
+                          </Form.Group>
+                          {errorMessage.error && (
+                            <div className="alert alert-danger">
+                              {errorMessage.error}
+                            </div>
+                          )}
                           <Button variant="secondary" onClick={handleCancel}>
                             Cancel
                           </Button>
@@ -301,37 +483,24 @@ export default function PersonalProfile() {
                             variant="primary"
                             type="submit"
                             className="ms-2"
+                            id="hiddenSubmitButton"
+                            onClick={handleSubmit.bind(this, formik.values)}
+                            disabled={isLoading} // Disable the "Save" button during loading
                           >
-                            Save
+                            {isLoading ? (
+                              <span>
+                                <span
+                                  className="spinner-border spinner-border-sm me-2"
+                                  role="status"
+                                  aria-hidden="true"
+                                ></span>
+                                Saving...
+                              </span>
+                            ) : (
+                              "Save"
+                            )}
                           </Button>
                         </>
-                      ) : (
-                        <div className="d-flex justify-content-start">
-                          <a href="#!">
-                            <MDBIcon
-                              fab
-                              icon="facebook me-3"
-                              size="lg"
-                              style={{ color: "#333" }}
-                            />
-                          </a>
-                          <a href="#!">
-                            <MDBIcon
-                              fab
-                              icon="twitter me-3"
-                              size="lg"
-                              style={{ color: "#333" }}
-                            />
-                          </a>
-                          <a href="#!">
-                            <MDBIcon
-                              fab
-                              icon="instagram me-3"
-                              size="lg"
-                              style={{ color: "#333" }}
-                            />
-                          </a>
-                        </div>
                       )}
                     </Form>
                   </MDBCardBody>

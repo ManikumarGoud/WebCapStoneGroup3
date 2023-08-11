@@ -1,5 +1,13 @@
 import React, { Fragment } from "react";
 import * as Yup from "yup";
+import { useFirebaseApp } from "reactfire";
+import {
+  getAuth,
+  createUserWithEmailAndPassword,
+  updateProfile,
+} from "firebase/auth";
+import { getFirestore, collection, addDoc } from "firebase/firestore";
+
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import { Button, Row, Col, Container } from "react-bootstrap";
 import axiosInstance from "../utils/axiosConfig";
@@ -13,6 +21,8 @@ const Register = () => {
   const navigate = useNavigate();
   const [errorMessage, setErrorMessage] = useState({});
   const dispatch = useDispatch();
+  const auth = getAuth(useFirebaseApp());
+  const firestore = getFirestore(useFirebaseApp());
 
   const schema = Yup.object().shape({
     firstName: Yup.string().required("First Name is required"),
@@ -31,12 +41,35 @@ const Register = () => {
   });
 
   const notifySuccess = () => {
-    console.log("done");
     toast.success("Registration successful!", {
       position: toast.POSITION.BOTTOM_RIGHT,
     });
     dispatch(() => login());
     navigate("/login");
+  };
+
+  const handleFirebaseRegister = async (values) => {
+    const { user } = await createUserWithEmailAndPassword(
+      auth,
+      values.email,
+      values.password
+    );
+
+    // Set the user's display name
+    updateProfile(user, {
+      displayName: values.firstName,
+    });
+
+    // Create entry in Firebase Firestore
+    const usersCollection = collection(firestore, "users");
+    const userData = {
+      firstName: values.firstName,
+      lastName: values.lastName,
+      email: values.email,
+      lastLogin: null,
+    };
+    await addDoc(usersCollection, userData);
+    notifySuccess();
   };
 
   return (
@@ -67,12 +100,10 @@ const Register = () => {
               if (typeof resp.data !== "boolean") {
                 setErrorMessage((prevErrors) => ({
                   ...prevErrors,
-                  ...resp.data.error,
                 }));
               } else {
                 resetForm();
-                console.log("asdf");
-                notifySuccess();
+                handleFirebaseRegister(values);
               }
             })
             .catch((error) => {

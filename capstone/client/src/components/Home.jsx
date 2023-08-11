@@ -4,7 +4,7 @@ import Coverflow from "reactjs-coverflow";
 import { StyleRoot } from "radium";
 import axiosInstance from "../utils/axiosConfig";
 import { Card } from "react-bootstrap";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { toast } from "react-toastify";
 import { login } from "../store/slice/AuthSlice";
@@ -17,19 +17,19 @@ function Home() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  // useEffect(() => {
-  //   axiosInstance
-  //     .post("/login", {})
-  //     .then((resp) => {
-  //       if (typeof resp.data !== "boolean") {
-  //         toast.error("Session Expired!!");
-  //       } else {
-  //         dispatch(login());
-  //         navigate("/");
-  //       }
-  //     })
-  //     .catch((error) => {});
-  // }, []);
+  useEffect(() => {
+    axiosInstance
+      .post("/login", {})
+      .then((resp) => {
+        if (typeof resp.data === "boolean") {
+          dispatch(login());
+        }
+      })
+      .catch((error) => {
+        toast.error("Session Expired!!");
+        navigate("/login");
+      });
+  }, []);
 
   useEffect(() => {
     // Fetch latest products
@@ -53,7 +53,9 @@ function Home() {
       });
   }, []);
 
-  const handleClick = (id) => {};
+  const handleClick = (id) => {
+    navigate(`/product/${id}`);
+  };
   const addToCart = (id) => {};
   const handleSearch = () => {};
 
@@ -122,7 +124,10 @@ function Home() {
       <div className="row row-cols-1 row-cols-md-3">
         {allProducts.map((product) => (
           <div className="col mb-4" key={product._id}>
-            <Card>
+            <Card
+              onClick={handleClick.bind(this, product._id)}
+              style={{ cursor: "pointer" }}
+            >
               <Card.Img
                 variant="top"
                 src={`data:image/jpeg;base64,${product.image}`}

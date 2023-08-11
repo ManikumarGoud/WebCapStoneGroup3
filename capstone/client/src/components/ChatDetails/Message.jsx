@@ -1,6 +1,5 @@
 import React from "react";
 import { BsPerson, BsFillPersonFill } from "react-icons/bs";
-import moment from "moment";
 
 const ChatMessage = ({ message, currentUser }) => {
   const { sender, text, timestamp } = message;
@@ -9,8 +8,6 @@ const ChatMessage = ({ message, currentUser }) => {
     ? "chat-message-me py-2 justify-content-end"
     : "chat-message-friend ";
 
-  const formattedTimestamp = moment(timestamp, "h:mm A").format("LT");
-
   return (
     <div className={`chat-message d-flex ${messageClass}`}>
       <div className="profile-image">
@@ -18,7 +15,9 @@ const ChatMessage = ({ message, currentUser }) => {
       </div>
       <div className={`message-content`}>
         <p className="message-text m-0">{text}</p>
-        <h6 className="message-timestamp m-0">{formattedTimestamp}</h6>
+        <h6 className="message-timestamp m-0 text-small">
+          {timestamp.split(" EDT")[0]}
+        </h6>
       </div>
       <div className="profile-image">
         {isMe && <BsPerson size={24} className="person-icon" />}

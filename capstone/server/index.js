@@ -23,7 +23,12 @@ const {
   deleteProduct,
   updateProduct,
   getMyProductList,
+  getProductDetails,
 } = require("./src/controllers/productController");
+const {
+  getUserProfile,
+  updateUserProfile,
+} = require("./src/controllers/userController");
 app.use(
   cors({
     origin: "http://localhost:3000",
@@ -52,6 +57,9 @@ route.get("/myProducts", getMyProductList);
 route.get("/products", getProductList);
 route.delete("/products/delete/:id", authCheck, deleteProduct);
 route.put("/products/update/:id", authCheck, updateProduct);
+route.get("/product/:id", authCheck, getProductDetails);
+route.get("/user", authCheck, getUserProfile);
+route.post("/user/update", authCheck, updateUserProfile);
 
 app.use(route);
 app.listen(process.env.PORT, () => {

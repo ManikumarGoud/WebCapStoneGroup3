@@ -16,6 +16,11 @@ import {
 import moment from "moment";
 import Input from "./Input";
 import ChatMessages from "./Messages";
+import axiosInstance from "../../utils/axiosConfig";
+import { toast } from "react-toastify";
+import { login } from "../../store/slice/AuthSlice";
+import { useDispatch } from "react-redux";
+import { useNavigate } from "react-router";
 
 const Chat = () => {
   const [friends, setFriends] = useState([]);
@@ -26,6 +31,23 @@ const Chat = () => {
   const firestore = useFirestore();
   const bottomRef = useRef();
   const { data: user } = useUser();
+
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    axiosInstance
+      .post("/login", {})
+      .then((resp) => {
+        if (typeof resp.data === "boolean") {
+          dispatch(login());
+        }
+      })
+      .catch((error) => {
+        toast.error("Session Expired!!");
+        navigate("/login");
+      });
+  }, []);
 
   useEffect(() => {
     const loadFriends = async () => {
@@ -44,6 +66,7 @@ const Chat = () => {
         const friendsData = friendsSnapshot.docs.map((doc) => {
           return { ...doc.data(), id: doc.id };
         });
+        console.log(friendsData)
         setFriends(friendsData);
         if (friendsData.length > 0) {
           setSelectedFriend(friendsData[0]);

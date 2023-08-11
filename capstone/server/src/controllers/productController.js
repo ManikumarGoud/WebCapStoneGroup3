@@ -1,4 +1,5 @@
 const Product = require("../models/Products");
+const User = require("../models/User");
 
 const getProductList = async (req, res) => {
   try {
@@ -77,11 +78,12 @@ const updateProduct = async (req, res) => {
   const { id } = req.params;
   const updatedProduct = req.body;
   try {
-    if (updatedProduct.image.includes("data:image/jpeg;base64,")) {
-      updatedProduct.image = updatedProduct.image.replace(
-        "data:image/jpeg;base64,",
-        ""
-      );
+    if (!id) {
+      res.status(500).json({ error: "Product ID is required" });
+      return;
+    }
+    if (updatedProduct.image.includes("data:image/")) {
+      updatedProduct.image = updatedProduct.image.split("base64,")[1];
     }
     const product = await Product.findByIdAndUpdate(
       { _id: id },
@@ -91,6 +93,25 @@ const updateProduct = async (req, res) => {
     res.json(product);
   } catch (error) {
     console.error("Error updating product:", error);
+    res.status(500).json({ error: "Failed to update product" });
+  }
+};
+
+const getProductDetails = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!id) {
+      res.status(500).json({ error: "Product ID is required" });
+      return;
+    }
+    const product = await Product.findById({ _id: id });
+    const user = await User.findById(
+      { _id: product.userId },
+      { _id: 1, firstName: 1, lastName: 1 }
+    );
+
+    res.json({ product, user });
+  } catch (error) {
     res.status(500).json({ error: "Failed to update product" });
   }
 };
@@ -158,4 +179,5 @@ module.exports = {
   updateProduct,
   getMyProductList,
   getLatestProductList,
+  getProductDetails,
 };

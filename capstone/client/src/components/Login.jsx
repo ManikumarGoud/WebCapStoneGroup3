@@ -5,8 +5,9 @@ import { Button, Row, Col, Container } from "react-bootstrap";
 import axiosInstance from "../utils/axiosConfig";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
-import { useDispatch /*useSelector*/ } from "react-redux";
+import { useDispatch } from "react-redux";
 import { login } from "../store/slice/AuthSlice";
+import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -17,9 +18,7 @@ const Login = () => {
     axiosInstance
       .post("/login", {})
       .then((resp) => {
-        if (typeof resp.data !== "boolean") {
-          setErrorMessage(resp.data.error);
-        } else {
+        if (typeof resp.data === "boolean") {
           dispatch(login());
           navigate("/");
         }
@@ -55,6 +54,8 @@ const Login = () => {
               dispatch(login());
               resetForm();
               navigate("/");
+              const auth = getAuth();
+              signInWithEmailAndPassword(auth, email, password);
             }
           })
           .catch((error) => {

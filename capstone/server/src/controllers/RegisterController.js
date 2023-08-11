@@ -63,20 +63,20 @@ const registerController = async (req, resp, next) => {
                 resp.json(true);
               })
               .catch((err) => {
-      console.log(err)
+                console.log(err);
 
                 resp.status(500).json({ error: "Server Error" });
               });
           })
           .catch((err) => {
-      console.log(err)
+            console.log(err);
 
             resp.status(500).json({ error: "Server Error" });
           });
       }
     })
     .catch((err) => {
-      console.log(err)
+      console.log(err);
       resp.status(500).json({ message: "Server Error", code: 500 });
     });
 };

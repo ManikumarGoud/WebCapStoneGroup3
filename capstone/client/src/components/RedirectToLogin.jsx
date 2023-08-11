@@ -3,7 +3,6 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 const RedirectToLogin = () => {
-  console.log("alsdkjflsjflsjdflasdjfa;ls");
   const navigate = useNavigate();
 
   useEffect(() => {
