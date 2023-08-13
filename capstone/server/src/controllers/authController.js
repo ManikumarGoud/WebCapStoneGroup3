@@ -3,7 +3,6 @@ const bcrypt = require("bcrypt");
 
 const getLogin = (req, res) => {
   const { userId } = req.session;
-  console.log(userId);
   res.json(userId);
 };
 

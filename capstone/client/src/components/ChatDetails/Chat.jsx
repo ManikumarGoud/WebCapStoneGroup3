@@ -66,7 +66,6 @@ const Chat = () => {
         const friendsData = friendsSnapshot.docs.map((doc) => {
           return { ...doc.data(), id: doc.id };
         });
-        console.log(friendsData)
         setFriends(friendsData);
         if (friendsData.length > 0) {
           setSelectedFriend(friendsData[0]);

@@ -30,6 +30,10 @@ const ProductDetails = (props) => {
         toast.error("Session Expired!!");
         navigate("/login");
       });
+    fetchAllProducts();
+  }, []);
+
+  const fetchAllProducts = () => {
     axiosInstance
       .get(`/product/${id}`)
       .then((response) => {
@@ -40,15 +44,6 @@ const ProductDetails = (props) => {
       .catch((error) => {
         console.error("Error fetching latest products:", error);
       });
-  }, []);
-  const handleBuy = () => {
-    // Add logic for handling the buy button click
-    // For example, redirect to a payment page or show a confirmation modal
-  };
-
-  const handleAddToCart = () => {
-    // Add logic for handling the add to cart button click
-    // For example, add the product to the user's shopping cart
   };
 
   const handleMouseOver = (e) => {
@@ -58,6 +53,66 @@ const ProductDetails = (props) => {
 
   const handleMouseOut = () => {
     setIsZoomed(false);
+  };
+
+  const increaseQuantity = (e, productId, quantity) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (quantity < product.quantity) {
+      axiosInstance
+        .post(`/cart/increase/${productId}`)
+        .then(() => {
+          // Refresh cart items after increasing quantity
+          fetchAllProducts();
+        })
+        .catch((error) => {
+          console.error("Error increasing quantity:", error);
+        });
+    } else {
+      console.error("Cannot increase quantity further");
+    }
+  };
+
+  const decreaseQuantity = (e, productId, quantity) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (quantity > 1) {
+      axiosInstance
+        .post(`/cart/decrease/${productId}`)
+        .then(() => {
+          // Refresh cart items after decreasing quantity
+          fetchAllProducts();
+        })
+        .catch((error) => {
+          console.error("Error decreasing quantity:", error);
+        });
+    } else {
+      // If the quantity is already 1, remove the product from the cart
+      axiosInstance
+        .delete(`/cart/remove/${productId}`)
+        .then(() => {
+          // Refresh cart items after removing from cart
+          fetchAllProducts();
+        })
+        .catch((error) => {
+          console.error("Error removing from cart:", error);
+        });
+    }
+  };
+
+  const addToCart = (e, id, quantity) => {
+    e.preventDefault();
+    e.stopPropagation();
+    axiosInstance
+      .post(`/cart/increase/${id}`)
+      .then(() => {
+        // Refresh cart items after adding to cart
+        fetchAllProducts();
+      })
+      .catch((error) => {
+        console.error("Error adding to cart:", error);
+      });
   };
 
   return (
@@ -106,12 +161,42 @@ const ProductDetails = (props) => {
                 <Card.Text>{`Description: ${product.desc}`}</Card.Text>
                 <Card.Text>{`Price: $${product.price} CAD`}</Card.Text>
                 <Card.Text>{`Added By: ${user.lastName}, ${user.firstName}`}</Card.Text>
-                <Button className="error" onClick={handleBuy}>
-                  Buy
-                </Button>
-                <Button className="mx-1" onClick={handleAddToCart}>
-                  Add to Cart
-                </Button>
+                {product.quantityInCart > 0 ? (
+                  <>
+                    <Button
+                      className="mx-1"
+                      onClick={(e) =>
+                        decreaseQuantity(
+                          e,
+                          product._id,
+                          product.quantityInCart - 1
+                        )
+                      }
+                    >
+                      -
+                    </Button>
+                    <span className="mx-1">{product.quantityInCart}</span>
+                    <Button
+                      className="mx-1"
+                      onClick={(e) =>
+                        increaseQuantity(
+                          e,
+                          product._id,
+                          product.quantityInCart + 1
+                        )
+                      }
+                    >
+                      +
+                    </Button>
+                  </>
+                ) : (
+                  <Button
+                    className="mx-1"
+                    onClick={(e) => addToCart(e, product._id, 1)}
+                  >
+                    Add to Cart
+                  </Button>
+                )}
               </Card.Body>
             </Card>
           </div>

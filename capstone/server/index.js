@@ -24,7 +24,10 @@ const {
   updateProduct,
   getMyProductList,
   getProductDetails,
+  handleSearch,
 } = require("./src/controllers/productController");
+const cartController = require("./src/controllers/cartController");
+
 const {
   getUserProfile,
   updateUserProfile,
@@ -58,8 +61,14 @@ route.get("/products", getProductList);
 route.delete("/products/delete/:id", authCheck, deleteProduct);
 route.put("/products/update/:id", authCheck, updateProduct);
 route.get("/product/:id", authCheck, getProductDetails);
+route.get("/product/search/:search", authCheck, handleSearch);
 route.get("/user", authCheck, getUserProfile);
 route.post("/user/update", authCheck, updateUserProfile);
+route.post("/cart/increase/:id", cartController.increaseQuantity);
+route.post("/cart/decrease/:id", cartController.decreaseQuantity);
+route.get("/cart", cartController.getAllProducts);
+route.post("/checkout", authCheck, cartController.doPayment);
+route.delete("/cart/remove/:id", cartController.removeFromCart);
 
 app.use(route);
 app.listen(process.env.PORT, () => {

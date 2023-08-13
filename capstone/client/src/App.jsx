@@ -23,6 +23,8 @@ import Footer from "./components/Footer";
 import PersonalProfile from "./components/Profile";
 import ProductDetails from "./components/ProductDetails";
 import Chat from "./components/ChatDetails/Chat";
+import Cart from "./components/Cart";
+import Checkout from "./components/Checkout";
 
 const App = () => {
   const app = useFirebaseApp();
@@ -46,6 +48,8 @@ const App = () => {
                 <Route path="/product/:id" element={<ProductDetails />} />
                 <Route path="/" element={<Home />} />
                 <Route exact path="/chat" element={<Chat />} />
+                <Route exact path="/cart" element={<Cart />} />
+                <Route exact path="/checkout" element={<Checkout />} />
                 <Route path="*" element={<RedirectToLogin />} />
               </Routes>
               <Footer />

@@ -6,13 +6,13 @@ import axiosInstance from "../utils/axiosConfig";
 import { Card } from "react-bootstrap";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
-import { toast } from "react-toastify";
 import { login } from "../store/slice/AuthSlice";
 
 function Home() {
   const [latestProducts, setLatestProducts] = useState([]);
   const [allProducts, setAllProducts] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [cartItems, setCartItems] = useState([]);
 
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -26,8 +26,17 @@ function Home() {
         }
       })
       .catch((error) => {
-        toast.error("Session Expired!!");
         navigate("/login");
+      });
+
+    // Fetch cart items
+    axiosInstance
+      .get("/cart")
+      .then((response) => {
+        setCartItems(response.data);
+      })
+      .catch((error) => {
+        console.error("Error fetching cart items:", error);
       });
   }, []);
 
@@ -41,7 +50,10 @@ function Home() {
       .catch((error) => {
         console.error("Error fetching latest products:", error);
       });
+    fetchAllProducts();
+  }, []);
 
+  const fetchAllProducts = () => {
     // Fetch all products
     axiosInstance
       .get("/products")
@@ -51,13 +63,93 @@ function Home() {
       .catch((error) => {
         console.error("Error fetching all products:", error);
       });
-  }, []);
+  };
 
   const handleClick = (id) => {
     navigate(`/product/${id}`);
   };
-  const addToCart = (id) => {};
-  const handleSearch = () => {};
+  const addToCart = (e, id, quantity) => {
+    e.preventDefault();
+    e.stopPropagation();
+    axiosInstance
+      .post(`/cart/increase/${id}`)
+      .then(() => {
+        // Refresh cart items after adding to cart
+        fetchAllProducts();
+      })
+      .catch((error) => {
+        console.error("Error adding to cart:", error);
+      });
+  };
+
+  const increaseQuantity = (e, productId, quantity) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const product = allProducts.find((prod) => prod._id === productId);
+    if (!product) {
+      return;
+    }
+
+    if (quantity < product.quantity) {
+      axiosInstance
+        .post(`/cart/increase/${productId}`)
+        .then(() => {
+          // Refresh cart items after increasing quantity
+          fetchAllProducts();
+        })
+        .catch((error) => {
+          console.error("Error increasing quantity:", error);
+        });
+    } else {
+      console.error("Cannot increase quantity further");
+    }
+  };
+
+  const decreaseQuantity = (e, productId, quantity) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (quantity > 1) {
+      axiosInstance
+        .post(`/cart/decrease/${productId}`)
+        .then(() => {
+          // Refresh cart items after decreasing quantity
+          fetchAllProducts();
+        })
+        .catch((error) => {
+          console.error("Error decreasing quantity:", error);
+        });
+    } else {
+      // If the quantity is already 1, remove the product from the cart
+      axiosInstance
+        .delete(`/cart/remove/${productId}`)
+        .then(() => {
+          // Refresh cart items after removing from cart
+          fetchAllProducts();
+        })
+        .catch((error) => {
+          console.error("Error removing from cart:", error);
+        });
+    }
+  };
+
+  const handleSearch = () => {
+    if (!searchTerm) return;
+    axiosInstance
+      .get(`/product/search/${searchTerm}`)
+      .then((response) => {
+        // Process the response
+        setAllProducts([...response.data]);
+      })
+      .catch((error) => {
+        console.error("Error searching products:", error);
+      });
+  };
+
+  const handleClear = () => {
+    setSearchTerm("");
+    fetchAllProducts();
+  };
 
   return (
     <Container className="m-0 p-0 mw-100">
@@ -65,7 +157,7 @@ function Home() {
         <InputGroup>
           <Form.Control
             type="text"
-            className="w-75"
+            className="w-75 b-0 shadow-none"
             placeholder="Search"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -76,6 +168,14 @@ function Home() {
             onClick={handleSearch}
           >
             Search
+          </Button>
+
+          <Button
+            as="InputGroup.Append"
+            variant="secondary"
+            onClick={handleClear}
+          >
+            Clear
           </Button>
         </InputGroup>
       </Form.Group>
@@ -124,11 +224,9 @@ function Home() {
       <div className="row row-cols-1 row-cols-md-3">
         {allProducts.map((product) => (
           <div className="col mb-4" key={product._id}>
-            <Card
-              onClick={handleClick.bind(this, product._id)}
-              style={{ cursor: "pointer" }}
-            >
+            <Card style={{ cursor: "pointer" }}>
               <Card.Img
+                onClick={handleClick.bind(this, product._id)}
                 variant="top"
                 src={`data:image/jpeg;base64,${product.image}`}
                 height={300}
@@ -138,15 +236,42 @@ function Home() {
               <Card.Body>
                 <Card.Title>{product.name}</Card.Title>
                 <Card.Text>{product.desc}</Card.Text>
-                <Button
-                  className="error"
-                  onClick={() => handleClick(product._id)}
-                >
-                  Buy
-                </Button>
-                <Button className="mx-1" onClick={() => addToCart(product._id)}>
-                  Add to Cart
-                </Button>
+                {product.quantityInCart > 0 ? (
+                  <>
+                    <Button
+                      className="mx-1"
+                      onClick={(e) =>
+                        decreaseQuantity(
+                          e,
+                          product._id,
+                          product.quantityInCart - 1
+                        )
+                      }
+                    >
+                      -
+                    </Button>
+                    <span className="mx-1">{product.quantityInCart}</span>
+                    <Button
+                      className="mx-1"
+                      onClick={(e) =>
+                        increaseQuantity(
+                          e,
+                          product._id,
+                          product.quantityInCart + 1
+                        )
+                      }
+                    >
+                      +
+                    </Button>
+                  </>
+                ) : (
+                  <Button
+                    className="mx-1"
+                    onClick={(e) => addToCart(e, product._id, 1)}
+                  >
+                    Add to Cart
+                  </Button>
+                )}
               </Card.Body>
             </Card>
           </div>

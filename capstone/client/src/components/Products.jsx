@@ -13,7 +13,7 @@ const ProductList = ({ products, deleteProduct, editProduct }) => {
       <h2>Product List</h2>
       <div className="row row-cols-1 row-cols-md-4">
         {products.length === 0 ? (
-          <div className="col text-center">No products present.</div>
+          <div className="col text-center vh-50">No products present.</div>
         ) : (
           products.map((product) => (
             <div className="col mb-4" key={product._id}>

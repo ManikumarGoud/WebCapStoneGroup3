@@ -1,3 +1,4 @@
+const Cart = require("../models/Cart");
 const Product = require("../models/Products");
 const User = require("../models/User");
 
@@ -9,18 +10,59 @@ const getProductList = async (req, res) => {
     // Retrieve the list of products added by other users
     let products = [];
     if (userId) {
-      products = await Product.find({ userId: { $ne: userId } });
+      products = await Product.find({
+        userId: { $ne: userId },
+        quantity: { $gt: 0 },
+      });
     } else {
       products = await Product.find();
     }
 
-    res.status(200).json(products);
+    // Get the cart items for the user
+    const cartItems = await Cart.find({ userId });
+
+    // Map cart items to a dictionary for efficient lookup
+    const cartItemMap = cartItems.reduce((map, item) => {
+      map[item.productId] = item.quantity;
+      return map;
+    }, {});
+
+    // Add quantity information to each product
+    const productListWithQuantity = products.map((product) => {
+      const quantityInCart = cartItemMap[product._id.toString()] || 0;
+      return {
+        ...product.toObject(),
+        quantityInCart,
+      };
+    });
+
+    res.status(200).json(productListWithQuantity);
   } catch (error) {
     console.log("Error retrieving product list:", error);
     res.status(500).json({ error: "Error retrieving product list" });
   }
 };
 
+const handleSearch = async (req, res) => {
+  try {
+    let searchTerm = req.params.search;
+    searchTerm = searchTerm.trim();
+    const searchRegex = new RegExp(searchTerm, "i");
+
+    // Find products that match the search term in name or desc
+    const products = await Product.find({
+      $or: [
+        { name: { $regex: searchRegex } },
+        { desc: { $regex: searchRegex } },
+      ],
+    });
+
+    res.status(200).json(products);
+  } catch (error) {
+    console.error("Error searching products:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
 const getLatestProductList = async (req, res) => {
   try {
     // Retrieve the user ID from the session
@@ -48,7 +90,10 @@ const getMyProductList = async (req, res) => {
     // Retrieve the user ID from the session
     const userId = req.session.userId;
 
-    const products = await Product.find({ userId: { $eq: userId } });
+    const products = await Product.find({
+      userId: { $eq: userId },
+      quantity: { $gt: 0 },
+    });
     res.status(200).json(products);
   } catch (error) {
     console.log("Error retrieving product list:", error);
@@ -100,19 +145,34 @@ const updateProduct = async (req, res) => {
 const getProductDetails = async (req, res) => {
   try {
     const { id } = req.params;
-    if (!id) {
-      res.status(500).json({ error: "Product ID is required" });
-      return;
-    }
-    const product = await Product.findById({ _id: id });
-    const user = await User.findById(
-      { _id: product.userId },
-      { _id: 1, firstName: 1, lastName: 1 }
-    );
+    const userId = req.session.userId;
 
-    res.json({ product, user });
+    if (!id) {
+      return res.status(400).json({ error: "Product ID is required" });
+    }
+
+    const product = await Product.findById(id);
+    const user = await User.findById(product.userId, {
+      _id: 1,
+      firstName: 1,
+      lastName: 1,
+    });
+
+    let quantityInCart = 0;
+    const cart = await Cart.findOne({ userId, productId: id }, { quantity: 1 });
+    if (cart) {
+      quantityInCart = cart.quantity;
+    }
+
+    const productWithQuantity = {
+      ...product.toObject(),
+      quantityInCart,
+    };
+
+    res.json({ product: productWithQuantity, user });
   } catch (error) {
-    res.status(500).json({ error: "Failed to update product" });
+    console.error("Error fetching product details:", error);
+    res.status(500).json({ error: "Failed to fetch product details" });
   }
 };
 
@@ -178,6 +238,7 @@ module.exports = {
   deleteProduct,
   updateProduct,
   getMyProductList,
+  handleSearch,
   getLatestProductList,
   getProductDetails,
 };
