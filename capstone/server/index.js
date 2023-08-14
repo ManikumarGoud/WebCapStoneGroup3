@@ -34,7 +34,7 @@ const {
 } = require("./src/controllers/userController");
 app.use(
   cors({
-    origin: process.env.CLIENT_URI,
+    origin: process.env.CLIENT_URI || "http://localhost:3000",
     credentials: true,
   })
 );
