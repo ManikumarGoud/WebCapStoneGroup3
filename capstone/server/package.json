@@ -18,11 +18,12 @@
   "version": "1.0.0",
   "main": "index.js",
   "engines":{
-    "node":"14.x"
+    "node":"18.x"
   }
   "scripts": {
     "start": "nodemon index.js",
     "build": "node index.js",
+    "vercel:build": "echo vercel build",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "divakar kashyap",
