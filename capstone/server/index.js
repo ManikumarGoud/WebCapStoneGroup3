@@ -47,7 +47,7 @@ const route = express.Router();
 
 route.post("/register", registerController);
 route.get("/logout", logout);
-route.get("/ll", getLogin);
+route.get("/", login);
 
 route.post("/login", login);
 route.post("/products/add", authCheck, upload, addProduct);
