@@ -32,12 +32,8 @@ const {
   getUserProfile,
   updateUserProfile,
 } = require("./src/controllers/userController");
-app.use(
-  cors({
-    origin: process.env.CLIENT_URI || "http://localhost:3000",
-    credentials: true,
-  })
-);
+app.use(cors());
+app.options('*', cors());
 
 app.use(express.static("public"));
 app.use(express.json({ limit: "5mb" }));
